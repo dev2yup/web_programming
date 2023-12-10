@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>weather forecast</title>
+    <style>
+        #container {
+            text-align: center;
+        }
+        #get-weather-button {
+            margin-bottom: 50px;
+        }
+    </style>
+
+</head>
+<body>
+    <div id="container">
+        <h2 id="today-weather">날씨</h2>
+        <button id="get-weather-button" onclick="getWeather()">버튼을 누르세요</button>
+        <div id="tagArea">
+            <p id="weather"></p>
+        </div>
+    </div>
+    <script>
+        function getWeather(){
+            var today = new Date();
+            var year = today.getFullYear();
+            var month = ('0' + (today.getMonth() + 1)).slice(-2);
+            var day = ('0' + today.getDate()).slice(-2);
+            var dateString = year + month + day;
+
+            document.getElementById('today-weather').innerText = year+"년 "+month+"월 "+day+"일 09시 날씨";
+
+            let tagArea = document.getElementById('tagArea');
+
+            fetch("https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getVilageFcst?serviceKey=dk9HCpmex4qFj8Pt2%2BWk3Rv5k91C9MjR4WFbmPDeCpprkpTQRqRYiE4vkEDhIV2IwoqwEaniSytfU21INgV9Rg%3D%3D&dataType=JSON&numOfRows=10&&pageNo=1&base_date=" + dateString + "&base_time=0800&nx=55&ny=127")//json파일 읽어오기
+            .then((response) => response.json())//읽어온 데이터를 json으로 변환
+            .then((data) => {
+                let elm = data.response.body.items.item;
+
+                for(let i = 0; i < 10; i++)
+                {
+                    switch(elm[i]['category']){
+                        case 'TMP':
+                            let TMP_pTag = createPtag(); // p태그 생성
+                            TMP_pTag.innerText = "1시간 기온:  " + elm[i]['fcstValue'] + "℃";
+                            tagArea.appendChild(TMP_pTag);
+                            break;
+                        case 'SKY':
+                            let skyStatus;
+                            if (elm[i]['fcstValue'] == 1) skyStatus = '맑음';
+                            else if (elm[i]['fcstValue'] == 3) skyStatus = '구름 많음'
+                            else skyStatus = '흐림';
+
+                            let SKY_pTag = createPtag(); // p태그 생성
+                            SKY_pTag.innerText = "하늘 상태:  " + skyStatus;
+                            tagArea.appendChild(SKY_pTag);
+                            break;
+                        case 'TMX':
+                            let TMX_pTag = createPtag(); // p태그 생성
+                            TMX_pTag.innerText = "일 최고기온:  " + elm[i]['fcstValue'] + "℃";
+                            tagArea.appendChild(TMX_pTag);
+                            break;
+                        case 'POP':
+                            let POP_pTag = createPtag();
+                            POP_pTag.innerText = "강수 확률:  " + elm[i]['fcstValue'] + "%";
+                            tagArea.appendChild(POP_pTag);
+                            break;
+                    }
+
+                }
+            })
+        }
+
+        function createPtag(){
+            let new_pTag = document.createElement('p'); // p태그 생성
+            new_pTag.setAttribute('class', 'pTag'); // createElement() 를 이용해 새롭게 만든 태그에 속성과 값을 부여한다.
+            return new_pTag;
+        }
+    </script>
+</body>
+</html>
