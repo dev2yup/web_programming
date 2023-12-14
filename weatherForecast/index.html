@@ -6,8 +6,20 @@
     <title>weather forecast</title>
     <style>
         #container {
+            margin-top: 10%;
             text-align: center;
         }
+
+        #district {
+            margin-left: 15px;
+            margin-right: 15px
+        }
+
+        #districts {
+            text-align: center;
+            padding-inline: 10px;
+        }
+
         #get-weather-button {
             margin-bottom: 50px;
         }
@@ -17,6 +29,15 @@
 <body>
     <div id="container">
         <h2 id="today-weather">날씨</h2>
+        <span id="district">
+            <select name="districts" id="districts">
+                <option value="selection">지역을 선택하세요.</option>
+                <option value="seoul">서울</option>
+                <option value="busan">부산</option>
+                <option value="osan">오산</option>
+                <option value="jeonju">전주</option>
+            </select>
+        </span>
         <button id="get-weather-button" onclick="getWeather()">버튼을 누르세요</button>
         <div id="tagArea">
             <p id="weather"></p>
@@ -24,21 +45,26 @@
     </div>
     <script>
         function getWeather(){
-            var today = new Date();
+
+            var dictAreaX = {'seoul':'60', 'osan':'62', 'busan':'98', 'jeonju':'63'}; // 딕셔너리에 지역별 X좌표와 Y좌표 저장
+            var dictAreaY = {'seoul':'127', 'osan':'118', 'busan':'76', 'jeonju':'89'};
+            var selectedDistricts = document.getElementById('districts');
+            selectedDistricts = selectedDistricts.options[selectedDistricts.selectedIndex]; // 드롭박스에서 선택 된 도시 불러옴
+
+            var today = new Date(); // 실시간 날짜 받아옴
             var year = today.getFullYear();
             var month = ('0' + (today.getMonth() + 1)).slice(-2);
             var day = ('0' + today.getDate()).slice(-2);
             var dateString = year + month + day;
-
-            document.getElementById('today-weather').innerText = year+"년 "+month+"월 "+day+"일 09시 날씨";
+            document.getElementById('today-weather').innerText = year+"년 "+month+"월 "+day+"일 09시 "+selectedDistricts.text+" 날씨";
 
             let tagArea = document.getElementById('tagArea');
 
-            fetch("https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getVilageFcst?serviceKey=dk9HCpmex4qFj8Pt2%2BWk3Rv5k91C9MjR4WFbmPDeCpprkpTQRqRYiE4vkEDhIV2IwoqwEaniSytfU21INgV9Rg%3D%3D&dataType=JSON&numOfRows=10&&pageNo=1&base_date=" + dateString + "&base_time=0800&nx=55&ny=127")//json파일 읽어오기
+            fetch("https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getVilageFcst?serviceKey=dk9HCpmex4qFj8Pt2%2BWk3Rv5k91C9MjR4WFbmPDeCpprkpTQRqRYiE4vkEDhIV2IwoqwEaniSytfU21INgV9Rg%3D%3D&dataType=JSON"+
+            "&numOfRows=10&&pageNo=1&base_date=" + dateString + "&base_time=0800&nx="+dictAreaX[selectedDistricts.value]+"&ny="+dictAreaY[selectedDistricts.value],  { cache: 'force-cache' })//json파일 읽어오기 (캐시된 리소스를 사용하여 로딩 속도를 향상)
             .then((response) => response.json())//읽어온 데이터를 json으로 변환
             .then((data) => {
                 let elm = data.response.body.items.item;
-
                 for(let i = 0; i < 10; i++)
                 {
                     switch(elm[i]['category']){
@@ -46,6 +72,11 @@
                             let TMP_pTag = createPtag(); // p태그 생성
                             TMP_pTag.innerText = "1시간 기온:  " + elm[i]['fcstValue'] + "℃";
                             tagArea.appendChild(TMP_pTag);
+                            break;
+                        case 'POP':
+                            let POP_pTag = createPtag();
+                            POP_pTag.innerText = "강수 확률:  " + elm[i]['fcstValue'] + "%";
+                            tagArea.appendChild(POP_pTag);
                             break;
                         case 'SKY':
                             let skyStatus;
@@ -62,13 +93,12 @@
                             TMX_pTag.innerText = "일 최고기온:  " + elm[i]['fcstValue'] + "℃";
                             tagArea.appendChild(TMX_pTag);
                             break;
-                        case 'POP':
-                            let POP_pTag = createPtag();
-                            POP_pTag.innerText = "강수 확률:  " + elm[i]['fcstValue'] + "%";
-                            tagArea.appendChild(POP_pTag);
+                        case 'PCP':
+                        let PCP_pTag = createPtag(); // p태그 생성
+                            PCP_pTag.innerText = "강수량:  " + elm[i]['fcstValue'] + " (단위: mm)";
+                            tagArea.appendChild(PCP_pTag);
                             break;
                     }
-
                 }
             })
         }
